@@ -1,0 +1,14 @@
+# Python environment
+venv/
+__pycache__/
+*.pyc
+
+# Local Databases (These are too big for Git)
+chroma_db/
+chroma_db_pdf/
+
+# Data files (Usually kept local or tracked via DVC)
+data/
+
+# OS files
+.DS_Store
