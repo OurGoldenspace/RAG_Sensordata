@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
@@ -6,139 +7,142 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage, AIMessage
 
-# 1. UI Configuration
-st.set_page_config(page_title="IIoT Maintenance Copilot", page_icon="⚙️", layout="wide")
-st.title("⚙️ Industrial Maintenance Copilot")
-st.caption("Verified Architecture: Memory + Agentic Routing + Source Attribution | Llama 3.2")
+# --- ADVANCED SEARCH TOOLS ---
+# 1. First, import the underlying Ranker to register it in Python's namespace
+try:
+    from flashrank import Ranker
+except ImportError:
+    st.error("Missing 'flashrank' library. Please run: pip install flashrank")
 
-# 2. Load Engines & Retrievers (Cached)
+# 2. Import the Classic Bridge and Community tools
+from langchain_classic.retrievers import ContextualCompressionRetriever, EnsembleRetriever
+from langchain_classic.retrievers.document_compressors import FlashrankRerank
+from langchain_community.retrievers import BM25Retriever
+
+# 3. 🔥 CRITICAL FIX: Rebuild the model NOW that 'Ranker' is imported
+FlashrankRerank.model_rebuild()
+
+# 1. UI Setup
+st.set_page_config(page_title="IIoT Advanced Copilot", layout="wide")
+st.title("⚙️ IIoT Advanced Copilot")
+st.caption("Hybrid Search (Vector + BM25) + FlashRank Re-ranking | 2026 Edition")
+
 @st.cache_resource
-def load_system():
+def load_advanced_engine():
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    llm = ChatOllama(model="llama3.2", temperature=0)
     
-    # Load Databases
+    # Load Vector Stores
     csv_db = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
     pdf_db = Chroma(persist_directory="./chroma_db_pdf", embedding_function=embeddings)
     
-    # Setup Retrievers
-    csv_retriever = csv_db.as_retriever(search_kwargs={"k": 5})
-    pdf_retriever = pdf_db.as_retriever(search_kwargs={"k": 5})
-    
-    # Initialize Local LLM (Temperature 0 for zero "bullshit")
-    llm = ChatOllama(model="llama3.2", temperature=0)
-    
-    return llm, csv_retriever, pdf_retriever
+    # 1. Sanitize PDF data for BM25
+    raw_data = pdf_db.get()
+    if not raw_data['documents']:
+        st.error("PDF Database is empty! Please run your ingest script first.")
+        return llm, csv_db, None
 
-llm, csv_retriever, pdf_retriever = load_system()
+    documents = raw_data['documents']
+    # Metadata Fix: Ensure every chunk has a dict (even if empty) to satisfy Pydantic
+    metadatas = [m if m is not None else {} for m in raw_data['metadatas']]
 
-# 3. Step 1: Strict Rephraser (Memory)
+    # 2. Setup Hybrid Ensemble (Keyword + Semantic)
+    bm25 = BM25Retriever.from_texts(documents, metadatas=metadatas)
+    bm25.k = 10
+    
+    vector_retriever = pdf_db.as_retriever(search_kwargs={"k": 10})
+    
+    ensemble = EnsembleRetriever(
+        retrievers=[bm25, vector_retriever], 
+        weights=[0.5, 0.5]
+    )
+    
+    # 3. Setup Re-ranker
+    try:
+        compressor = FlashrankRerank()
+        final_pdf_retriever = ContextualCompressionRetriever(
+            base_compressor=compressor, 
+            base_retriever=ensemble
+        )
+    except Exception as e:
+        st.warning(f"Flashrank initialization issue: {e}. Falling back to standard hybrid search.")
+        final_pdf_retriever = ensemble
+    
+    return llm, csv_db, final_pdf_retriever
+
+llm, csv_db, pdf_hybrid_retriever = load_advanced_engine()
+
+# --- REPHRASE & ROUTE LOGIC ---
 rephrase_prompt = ChatPromptTemplate.from_messages([
-    ("system", "Output ONLY a search query based on the history. No conversation. No questions."),
+    ("system", "Convert the user input into a standalone technical search query. Output ONLY the query."),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{input}"),
+    ("human", "{input}")
 ])
 rephrase_chain = rephrase_prompt | llm | StrOutputParser()
 
-# 4. Step 2: Strict Router (Agentic Logic)
 router_prompt = ChatPromptTemplate.from_template(
-    "Classify this question as 'telemetry' (sensors/data), 'manual' (safety/fixes), or 'both'. Output ONLY the word: {question}"
+    "Classify this question as 'telemetry' (sensor data), 'manual' (how-to/fixes), or 'both'. Output ONLY the word: {question}"
 )
 router_chain = router_prompt | llm | StrOutputParser()
 
-# 5. Response Generation Engine
+# --- MAIN GENERATOR ---
 def generate_response(user_input, chat_history):
-    # A. Rephrase the question using history
-    standalone_q = rephrase_chain.invoke({"input": user_input, "chat_history": chat_history}).strip()
+    # A. Rephrase based on history
+    standalone_q = rephrase_chain.invoke({"input": user_input, "chat_history": chat_history})
     
-    # B. Route the question
+    # B. Route to correct DB
     route = router_chain.invoke({"question": standalone_q}).strip().lower()
-    print(f"DEBUG: The AI chose route: {route}") 
-    
-    # Debug info in Sidebar
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("🛠️ AI Debugger")
-    st.sidebar.info(f"📍 **Route:** {route.upper()}")
-    st.sidebar.code(f"Search Query:\n{standalone_q}")
+    st.sidebar.info(f"📍 Routing: {route.upper()}")
+    st.sidebar.code(f"Query: {standalone_q}")
 
-    # C. Retrieve Context & Metadata
     docs = []
+    # C. Execute Retrieval
     if "telemetry" in route or "both" in route:
-        docs.extend(csv_retriever.invoke(standalone_q))
+        docs.extend(csv_db.as_retriever(search_kwargs={"k": 5}).invoke(standalone_q))
+    
     if "manual" in route or "both" in route:
-        docs.extend(pdf_retriever.invoke(standalone_q))
+        if pdf_hybrid_retriever:
+            docs.extend(pdf_hybrid_retriever.invoke(standalone_q))
 
-    print(f"DEBUG: Found {len(docs)} matching documents.")
-    for d in docs:
-        print(f"DEBUG: Snippet: {d.page_content[:100]}...")
+    context = "\n\n".join([d.page_content for d in docs])
     
-    # Extract Sources (Metadata)
-    sources = []
-    for d in docs:
-        source_name = d.metadata.get("source", "Unknown")
-        page = d.metadata.get("page", "N/A")
-        row = d.metadata.get("row", "N/A")
-        
-        if row != "N/A":
-            sources.append(f"📊 CSV Log (Row {row})")
-        elif page != "N/A":
-            sources.append(f"📄 Manual (Page {int(page) + 1})")
-        else:
-            sources.append(f"🔍 Source: {source_name}")
-    
-    unique_sources = list(set(sources))
-    context_text = "\n\n".join([d.page_content for d in docs])
-
-    # D. Final Answer (Cold Technical Engine)
+    # D. Final Strict Answer Generation
     qa_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a technical diagnostic tool. Use the context to provide a direct answer. "
-                   "1. Use only the context. 2. Do not ask questions. 3. No conversational filler. "
-                   "If the answer is not in the context, say 'DATA_NOT_FOUND'.\n\n"
+        ("system", "You are an expert IIoT maintenance assistant. Use the context to provide a direct, "
+                   "factual answer. Do not ask follow-up questions. If not in context, say 'DATA_NOT_FOUND'.\n\n"
                    "Context: {context}"),
         MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{input}"),
+        ("human", "{input}")
     ])
     
-    final_chain = qa_prompt | llm | StrOutputParser()
-    raw_answer = final_chain.invoke({
-        "context": context_text,
-        "chat_history": chat_history,
-        "input": standalone_q
+    response = (qa_prompt | llm | StrOutputParser()).invoke({
+        "context": context, "chat_history": chat_history, "input": standalone_q
     })
-
-    # E. Guardrail: Remove trailing follow-up questions
-    clean_lines = [line for line in raw_answer.split('\n') if not line.strip().endswith('?')]
-    final_answer = "\n".join(clean_lines).strip()
-
-    if not final_answer or "DATA_NOT_FOUND" in final_answer:
-        return "I could not find a specific answer in the local telemetry or the maintenance manual.", []
     
-    return final_answer, unique_sources
+    return response
 
-# 6. Streamlit Chat Interface
+# --- CHAT UI ---
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Display Message History
-for msg in st.session_state.chat_history:
-    st.chat_message("human" if isinstance(msg, HumanMessage) else "ai").write(msg.content)
+# Display conversation
+for m in st.session_state.chat_history:
+    role = "human" if isinstance(m, HumanMessage) else "ai"
+    with st.chat_message(role):
+        st.write(m.content)
 
-# Handle New User Input
-if prompt := st.chat_input("Ask about machine health (e.g., 'What is the torque for a Power Failure?')"):
-    st.chat_message("human").write(prompt)
+# Interaction
+if prompt := st.chat_input("Ask about machine health or repair steps..."):
+    with st.chat_message("human"):
+        st.write(prompt)
     
     with st.chat_message("ai"):
-        with st.spinner("Analyzing sensors and manuals..."):
-            response, found_sources = generate_response(prompt, st.session_state.chat_history)
-            st.write(response)
+        with st.spinner("Retrieving data and re-ranking results..."):
+            res = generate_response(prompt, st.session_state.chat_history)
+            st.write(res)
             
-            # Show Source Attribution
-            if found_sources:
-                with st.expander("✅ Verified Data Sources"):
-                    for s in found_sources:
-                        st.caption(s)
-    
-    # Update Session Memory
+    # Update History
     st.session_state.chat_history.extend([
         HumanMessage(content=prompt), 
-        AIMessage(content=response)
+        AIMessage(content=res)
     ])
