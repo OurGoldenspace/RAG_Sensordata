@@ -1,0 +1,6 @@
+Failure Mode: TWF (Tool Wear Failure)
+Diagnostic Overview: Tool wear failure happens when the continuous operational time of the milling tool exceeds its maximum rated lifespan (typically between 200 and 240 minutes, depending on the quality variant).
+Troubleshooting Steps: > 1. Safely retract the milling head from the product.
+2. Remove the worn tool bit and log its exact usage time in the maintenance database.
+3. Install a new tool bit matching the product quality variant (L, M, or H).
+4. Reset the tool wear timer in the local telemetry dashboard to 0.

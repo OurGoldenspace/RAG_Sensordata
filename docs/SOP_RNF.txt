@@ -1,0 +1,5 @@
+Failure Mode: RNF (Random Failure)
+Diagnostic Overview: A failure that cannot be attributed to heat, strain, power, or wear. These are statistical anomalies often caused by unpredictable hardware defects or raw material inconsistencies.
+Troubleshooting Steps: > 1. Perform a complete system reboot of the edge diagnostic server.
+2. Run a full 360-degree visual inspection of the machine and the current workpiece.
+3. If no physical damage is found, run a blank calibration cycle to test sensor health.

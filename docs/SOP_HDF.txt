@@ -1,0 +1,6 @@
+Failure Mode: HDF (Heat Dissipation Failure)
+Diagnostic Overview: Triggered when the difference between the air temperature and the process temperature falls below the minimum required threshold for thermal cooling, leading to overheating.
+Troubleshooting Steps: > 1. Power down the machine and allow for a 45-minute mandatory cooling period.
+2. Inspect the ambient cooling fans and industrial HVAC vents near the machine.
+3. Check the machine's internal thermal sensors for dust buildup or recalibration needs.
+4. Do not restart until the process temperature drops below 300K.

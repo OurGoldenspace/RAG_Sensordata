@@ -1,0 +1,6 @@
+Failure Mode: OSF (Overstrain Failure)
+Diagnostic Overview: Overstrain failures occur when the torque and rotational speed create a force that exceeds the tensile strength of the milling tool.
+Troubleshooting Steps: > 1. Hit the emergency stop to immediately halt the spindle.
+2. Clear the workspace and inspect the tool bit for catastrophic shearing.
+3. Verify the workpiece alignment; an unaligned piece causes sudden torque spikes.
+4. Replace the tool bit and recalibrate the zero-axis before restarting the production line.

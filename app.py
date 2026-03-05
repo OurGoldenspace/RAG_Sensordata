@@ -92,7 +92,7 @@ if prompt := st.chat_input("Ask about the telemetry data (e.g., 'What are the se
                 with st.expander("View Retrieved Knowledge Base SOP"):
                     st.info(retrieved_sop)
             
-            # Add the assistant's answer and SOP to the session memory
+            # Add the assistant's answer and SOP to the session memory.
             st.session_state.messages.append({
                 "role": "assistant", 
                 "content": final_response,

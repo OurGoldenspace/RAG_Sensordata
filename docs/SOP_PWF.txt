@@ -1,0 +1,6 @@
+Failure Mode: PWF (Power Failure)
+Diagnostic Overview: Power failures are detected when the product of torque and rotational speed (which equals power in Watts) falls outside the operational bounds of 3500W to 9000W.
+Troubleshooting Steps: > 1. Disconnect the machine from the main power grid to prevent voltage surges.
+2. Inspect the three-phase power supply lines for frayed wiring or blown fuses.
+3. Check the spindle motor for electrical shorts.
+4. Run a low-voltage diagnostic test before reconnecting to the main grid.
