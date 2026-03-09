@@ -8,6 +8,19 @@ from langchain_core.messages import ToolMessage
 import joblib
 import numpy as np
 
+import logging
+import os
+
+# Create logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+logging.basicConfig(
+    filename='logs/agent_activity.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
 # 1. Load the Dataset Safely
 DATA_PATH = "data/ai4i2020.csv"
 try:

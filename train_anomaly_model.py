@@ -5,6 +5,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 def train_model():
     print("--- Starting ML Pipeline for IoT Telemetry ---")
@@ -43,6 +46,25 @@ def train_model():
     print("Training Random Forest Classifier on historical sensor data...")
     model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
     model.fit(X_train_scaled, y_train)
+
+# 1. Save Confusion Matrix
+    y_pred = ml_model.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    plt.title('Failure Prediction Confusion Matrix')
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
+    plt.savefig('plots/confusion_matrix.png')
+
+# 2. Save Feature Importance
+    importances = ml_model.feature_importances_
+    features = ['Air temp', 'Process temp', 'Speed', 'Torque', 'Tool wear']
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=importances, y=features)
+    plt.title('Key Drivers of Machine Failure')
+    plt.savefig('plots/feature_importance.png')
+
     
     # 6. Evaluate the Model
     y_pred = model.predict(X_test_scaled)
