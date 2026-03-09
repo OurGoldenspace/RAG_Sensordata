@@ -1,0 +1,45 @@
+2026-03-09 15:52:50,734 - INFO - Use pytorch device_name: cpu
+2026-03-09 15:52:50,736 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-09 15:52:53,695 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-09 16:32:21,809 - INFO - Use pytorch device_name: cpu
+2026-03-09 16:32:21,809 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-09 16:32:24,434 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-09 16:32:35,207 - INFO - Captured UDI 1 for trend history.
+2026-03-09 16:33:52,531 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:34:34,567 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:36:29,470 - INFO - Captured UDI 12 for trend history.
+2026-03-09 16:36:53,001 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:37:15,396 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:37:47,051 - INFO - Captured UDI 168 for trend history.
+2026-03-09 16:38:10,617 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:38:19,522 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:39:57,868 - INFO - Captured UDI 5 for trend history.
+2026-03-09 16:40:21,999 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:40:31,498 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:43:23,037 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:43:29,410 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:47:00,281 - INFO - Use pytorch device_name: cpu
+2026-03-09 16:47:00,281 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-09 16:47:55,695 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 16:48:00,598 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:02:27,160 - INFO - Use pytorch device_name: cpu
+2026-03-09 17:02:27,161 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-09 17:02:29,656 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-09 17:03:47,184 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:03:58,578 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:05:40,482 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:05:45,723 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:09:07,200 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:09:14,907 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:21:49,494 - INFO - Use pytorch device_name: cpu
+2026-03-09 17:21:49,495 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-09 17:21:51,841 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-09 17:22:44,110 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 404 Not Found"
+2026-03-09 17:22:44,112 - ERROR - Execution Error: model 'llama3.2:3b' not found (status code: 404)
+2026-03-09 17:23:39,664 - INFO - Use pytorch device_name: cpu
+2026-03-09 17:23:39,665 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-09 17:23:41,802 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-09 17:24:11,903 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:24:14,352 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:24:56,121 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-09 17:24:58,216 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"

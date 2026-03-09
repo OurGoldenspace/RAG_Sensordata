@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from ask_bot import query_telemetry_and_diagnose
+from ask_bot import query_telemetry_and_diagnose, get_recent_telemetry_history
 
 # 1. Page Configuration
 st.set_page_config(page_title="Local IoT Diagnostic Agent", layout="wide")
@@ -9,7 +9,7 @@ st.title("⚙️ Secure Local Predictive Maintenance Agent")
 # 2. Sidebar Context
 with st.sidebar:
     st.header("About this System")
-    st.write("This application runs 100% locally. It analyzes CNC telemetry using a local LLM Pandas Agent and retrieves troubleshooting SOPs using a local ChromaDB instance.")
+    st.write("This application runs 100% locally. It analyzes CNC telemetry using a local LLM Agent and retrieves troubleshooting SOPs using a local ChromaDB instance.")
     st.header("⚙️ System Status")
     st.success("✅ ML Model: Random Forest Loaded")
     st.success("✅ Knowledge Base: ChromaDB Connected")
@@ -25,16 +25,16 @@ with st.sidebar:
 @st.cache_data
 def load_data():
     try:
+        # Note: Ensure path matches your actual file name
         return pd.read_csv("data/ai4i2020.csv")
     except FileNotFoundError:
         return None
 
 df = load_data()
 if df is not None:
-    # --- NEW DASHBOARD SECTION ---
     st.subheader("📊 Live Telemetry Dashboard")
     
-    # Create 3 columns for quick KPI metrics
+    # Quick KPI metrics
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(label="Total Machines Monitored", value=len(df))
@@ -43,62 +43,69 @@ if df is not None:
     with col3:
         st.metric(label="Detected Failures", value=df['Machine failure'].sum(), delta="- Requires Attention", delta_color="inverse")
     
-    # Create a time-series line chart for the first 100 rows to simulate live data
-    st.write("Recent Torque & Rotational Speed Trends (Sample Window)")
-    chart_data = df[['Torque [Nm]', 'Rotational speed [rpm]']].head(100)
-    # Normalize the data just for visual comparison on the same chart
-    chart_data['Rotational speed [rpm] (Scaled)'] = chart_data['Rotational speed [rpm]'] / 30 
-    st.line_chart(chart_data[['Torque [Nm]', 'Rotational speed [rpm] (Scaled)']])
-    # -----------------------------
-
     with st.expander("View Raw Telemetry Data"):
         st.dataframe(df.head(50))
 else:
-    st.error("⚠️ Data file not found. Please place 'ai4i2020_predictive_maintenance_dataset.csv' inside a folder named 'data'.")
+    st.error("⚠️ Data file not found. Please place 'ai4i2020.csv' inside a folder named 'data'.")
 
 # 4. Initialize Chat History in Session State
-# This is the magic that stops the app from "forgetting" your previous questions
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 5. Display past chat messages on app rerun
+# 5. Display past chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        # If there was an SOP retrieved in the past, display it in an expander
         if message.get("sop"):
             with st.expander("View Retrieved Knowledge Base SOP"):
                 st.info(message["sop"])
 
 # 6. React to user input
-# st.chat_input locks to the bottom of the screen and waits for the user to hit Enter
-if prompt := st.chat_input("Ask about the telemetry data (e.g., 'What are the sensor readings for UDI 168? Did it fail?')"):
-    
-    # Immediately display the user's new question
+if prompt := st.chat_input("Ask about the telemetry data (e.g., 'Check UDI 15')"):
     with st.chat_message("user"):
         st.markdown(prompt)
-    
-    # Add the user's question to the session memory
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Generate and display the assistant's response
     with st.chat_message("assistant"):
-        with st.spinner("Local Agent is analyzing the CSV..."):
-            
-            # Call your logic script
+        with st.spinner("Local Agent is analyzing..."):
             final_response, retrieved_sop = query_telemetry_and_diagnose(prompt)
-            
-            # Display the answer
             st.markdown(final_response)
             
-            # Display the SOP if one was triggered
             if retrieved_sop:
                 with st.expander("View Retrieved Knowledge Base SOP"):
                     st.info(retrieved_sop)
             
-            # Add the assistant's answer and SOP to the session memory.
             st.session_state.messages.append({
                 "role": "assistant", 
                 "content": final_response,
                 "sop": retrieved_sop
             })
+            # Rerun to refresh the history-based charts below
+            st.rerun()
+
+# 7. --- NEW: FLEET TELEMETRY INSIGHTS (TRENDS) ---
+st.divider()
+st.header("📈 Fleet Telemetry Insights")
+
+# Fetch the last 10 machines queried from the backend history
+history_data = get_recent_telemetry_history()
+
+if not history_data.empty:
+    st.write("Visualizing sensor behavior trends across recently inspected units:")
+    
+    # Allow operator to select metrics for comparison
+    available_metrics = ['Air temperature [K]', 'Process temperature [K]', 'Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']
+    selected_metrics = st.multiselect(
+        "Select Metrics to Plot:",
+        options=available_metrics,
+        default=['Air temperature [K]', 'Torque [Nm]']
+    )
+    
+    if selected_metrics:
+        # Plotting the data indexed by UDI to show machine-to-machine trends
+        chart_df = history_data.set_index('UDI')[selected_metrics]
+        st.line_chart(chart_df)
+    else:
+        st.warning("Please select at least one metric to visualize the trend.")
+else:
+    st.info("💡 **History is empty.** Ask the agent about a machine (e.g., 'What is the status of UDI 25?') to see telemetry trends appear here.")

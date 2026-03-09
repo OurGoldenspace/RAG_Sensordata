@@ -1,17 +1,19 @@
 import pandas as pd
+import joblib
+import numpy as np
+import logging
+import os
+import re
+
+# LangChain & LangGraph Imports (2026 Standards)
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.messages import ToolMessage, SystemMessage, HumanMessage
 from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import ToolMessage
-import joblib
-import numpy as np
 
-import logging
-import os
-
-# Create logs directory if it doesn't exist
+# 1. Setup Logging & Directories
 if not os.path.exists('logs'):
     os.makedirs('logs')
 
@@ -21,150 +23,134 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# 1. Load the Dataset Safely
+# 2. Load Dataset & ML Models
 DATA_PATH = "data/ai4i2020.csv"
 try:
     df = pd.read_csv(DATA_PATH)
 except FileNotFoundError:
-    print(f"Error: Could not find {DATA_PATH}.")
+    logging.error(f"Dataset not found at {DATA_PATH}")
     df = pd.DataFrame()
 
-# 2. Initialize Vector Database for RAG
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-vector_db = Chroma(persist_directory="./chroma_db", embedding_function=embeddings, collection_name="machine_sops")
-retriever = vector_db.as_retriever(search_kwargs={"k": 1})
-
-# --- DEFINE DETERMINISTIC TOOLS ---
-
-@tool
-def get_machine_sensor_data(udi: int) -> str:
-    """Use this tool to fetch the current sensor telemetry (temperature, speed, torque) for a specific machine UDI."""
-    row = df[df['UDI'] == udi]
-    if row.empty:
-        return f"Error: Machine UDI {udi} not found in the database."
-    
-    air_temp = row['Air temperature [K]'].values[0]
-    proc_temp = row['Process temperature [K]'].values[0]
-    speed = row['Rotational speed [rpm]'].values[0]
-    torque = row['Torque [Nm]'].values[0]
-    
-    return f"Telemetry for UDI {udi}: Air Temp: {air_temp}K, Process Temp: {proc_temp}K, Speed: {speed}rpm, Torque: {torque}Nm."
-
-# Load the trained ML model and scaler globally
 try:
     ml_model = joblib.load("models/rf_anomaly_model.pkl")
     scaler = joblib.load("models/scaler.pkl")
 except FileNotFoundError:
-    print("Warning: ML model not found. Please run train_anomaly_model.py first.")
+    logging.warning("ML models not found. Run training script first.")
+    ml_model, scaler = None, None
+
+# 3. Initialize RAG (Vector DB)
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vector_db = Chroma(
+    persist_directory="./chroma_db", 
+    embedding_function=embeddings, 
+    collection_name="machine_sops"
+)
+
+# Global memory for UI charts
+query_history = []
+
+# --- TOOLS ---
+
+@tool
+def get_machine_sensor_data(udi: int) -> str:
+    """Fetches telemetry (Temp, Speed, Torque) for a specific machine UDI."""
+    row = df[df['UDI'] == udi]
+    if row.empty: return f"Error: UDI {udi} not found."
+    
+    data = {
+        "Air": row['Air temperature [K]'].values[0],
+        "Process": row['Process temperature [K]'].values[0],
+        "Speed": row['Rotational speed [rpm]'].values[0],
+        "Torque": row['Torque [Nm]'].values[0]
+    }
+    return f"Telemetry UDI {udi}: {data['Air']}K Air, {data['Process']}K Process, {data['Speed']}rpm, {data['Torque']}Nm."
 
 @tool
 def check_machine_failure_status(udi: int) -> str:
-    """Use this tool to predict if a machine is failing using the trained ML model."""
+    """Predicts if a machine is failing using the Random Forest ML model."""
+    if ml_model is None or scaler is None:
+        return "ML Model not initialized."
+        
     row = df[df['UDI'] == udi]
-    if row.empty:
-        return f"Error: Machine UDI {udi} not found."
+    if row.empty: return f"Error: UDI {udi} not found."
     
-    # 1. Extract the raw sensor features
     features = row[['Air temperature [K]', 'Process temperature [K]', 'Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']]
-    
-    # 2. Scale the data using the saved scaler
     features_scaled = scaler.transform(features)
-    
-    # 3. Predict using the trained Random Forest model!
     prediction = ml_model.predict(features_scaled)[0]
     
     if prediction == 0:
-        return f"Machine UDI {udi} is predicted to be operating normally by the ML model. No failures detected."
+        return f"UDI {udi} status: NORMAL. No anomalies detected."
     
-    # 4. If the model predicts a failure, check the telemetry to guess the mode 
-    # (Since our binary model just predicts failure, we pull the specific flag for the RAG lookup)
     failures = [col for col in ['TWF', 'HDF', 'PWF', 'OSF', 'RNF'] if row[col].values[0] == 1]
-    failure_string = ', '.join(failures) if failures else 'Unknown Anomaly'
-            
-    return f"CRITICAL: ML Model predicts Machine UDI {udi} has FAILED. Probable failure modes: {failure_string}"
-
-
+    mode = ', '.join(failures) if failures else 'Unknown Anomaly'
+    return f"CRITICAL: Machine UDI {udi} has FAILED. Mode: {mode}"
 
 @tool
-def retrieve_troubleshooting_sop(udi: int) -> str:
-    """Use this tool ONLY if a machine has failed. Pass the machine UDI to retrieve the repair manual."""
-    # 1. We look up the failure mode ourselves so the LLM doesn't have to!
-    row = df[df['UDI'] == udi]
-    if row.empty:
-        return "Machine not found."
+def retrieve_troubleshooting_sop(query: str) -> str:
+    """Retrieves repair steps. Input can be a UDI number or keywords like 'wear limit'."""
+    search_term = str(query)
     
-    failures = [col for col in ['TWF', 'HDF', 'PWF', 'OSF', 'RNF'] if row[col].values[0] == 1]
-    
-    if not failures:
-        return "No specific failure mode logged for retrieval."
-        
-    failure_mode = failures[0] # Grab the first failure mode
-    
-    # 2. Now we query the vector database using the string we found
-    docs = retriever.invoke(failure_mode)
-    return docs[0].page_content if docs else "No standard operating procedure found for this issue."
+    # If the input is a UDI, find the specific failure mode first
+    if search_term.isdigit():
+        udi = int(search_term)
+        row = df[df['UDI'] == udi]
+        if not row.empty:
+            failures = [col for col in ['TWF', 'HDF', 'PWF', 'OSF', 'RNF'] if row[col].values[0] == 1]
+            if failures: search_term = failures[0]
 
-# Compile the tools into a list
+    docs = vector_db.similarity_search(search_term, k=1)
+    if docs:
+        source = docs[0].metadata.get('source', 'SOP_Manual.txt')
+        return f"SOURCE: {source}\n\nCONTENT: {docs[0].page_content}"
+    return f"No SOP found for '{search_term}'."
+
 tools = [get_machine_sensor_data, check_machine_failure_status, retrieve_troubleshooting_sop]
 
-# --- INITIALIZE LLM & LANGGRAPH AGENT ---
-
-# Llama 3.1 supports native tool calling, which LangGraph leverages perfectly
-llm = ChatOllama(model="llama3.1", temperature=0)
-
-# Build the LangGraph ReAct Agent
+# --- AGENT SETUP ---
+llm = ChatOllama(model="llama3.2:3b", temperature=0)
+# create_react_agent is the stable LangGraph way to bind tools
 agent_executor = create_react_agent(llm, tools)
 
-# --- MAIN EXECUTOR FUNCTION FOR APP.PY ---
-
+def get_recent_telemetry_history():
+    """Returns data for the last 10 machines queried."""
+    if not query_history: return pd.DataFrame()
+    return df[df['UDI'].isin(query_history)].tail(10)
 
 def query_telemetry_and_diagnose(user_question: str):
-    """Executes the LangGraph agent and parses the output for the Streamlit UI."""
+    """Main interface for Streamlit."""
     try:
-        # The Locked-Down System Prompt
-        system_prompt = """You are a Lead AI Reliability Engineer.
-        You have access to EXACTLY three tools. You must use their exact names:
-        1. `get_machine_sensor_data`: Fetches current telemetry (temp, speed, torque).
-        2. `check_machine_failure_status`: Predicts if the machine failed using our ML model.
-        3. `retrieve_troubleshooting_sop`: Retrieves the repair manual using ONLY the integer UDI.
+        # 1. Update Trend History
+        found_udis = re.findall(r'\d+', user_question)
+        if found_udis:
+            val = int(found_udis[0])
+            if not query_history or query_history[-1] != val:
+                query_history.append(val)
 
-        CRITICAL WORKFLOW AND TOOL RULES:
-        - ALWAYS call `get_machine_sensor_data` and `check_machine_failure_status` first.
-        - If the ML model predicts the machine is operating normally, DO NOT use `retrieve_troubleshooting_sop`. Just report that it is healthy and stop.
-        - If the ML model predicts a failure, you MUST use `retrieve_troubleshooting_sop`.
-        - DO NOT make up tool names (Never use 'get_sop' or 'check_telemetry_data').
+        # 2. Configure System Logic
+        system_message = (
+            "You are a Lead Reliability Engineer. Use tools to diagnose machines.\n"
+            "1. Check sensor data and failure status for any UDI mentioned.\n"
+            "2. If a failure is found, ALWAYS retrieve the SOP manual.\n"
+            "3. If healthy, provide telemetry and stop.\n"
+            "4. Always cite the source file from the manual (e.g., 'Per SOP_HDF.txt...')."
+        )
+
+        # 3. Invoke Agent
+        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=user_question)]}
+        result = agent_executor.invoke(inputs)
         
-        STRICT FORMATTING RULES:
-        - NEVER use the string '<|python_tag|>' in your response.
-        - To call a tool, use the format:
-          Thought: [Your reasoning]
-          Action: [Exact Tool Name]
-          Action Input: [UDI Number]
-        - To provide the final answer, use the format:
-          Final Answer: [Your natural language report to the user]
-        - ZERO CHATTER: Do not explain your steps; just use the format above.
-        """
+        # 4. Parse Results
+        final_answer = result["messages"][-1].content
         
-        # Run the graph
-        response = agent_executor.invoke({
-            "messages": [
-                ("system", system_prompt),
-                ("user", user_question)
-            ]
-        })
-        
-        # The final answer is always the content of the very last message in the graph state
-        final_answer = response["messages"][-1].content
-        
-        # Extract the SOP by looking for the specific ToolMessage
+        # Find the SOP in the message history
         retrieved_sop = None
-        for message in response["messages"]:
-            if isinstance(message, ToolMessage) and message.name == "retrieve_troubleshooting_sop":
-                # Ensure we don't display LangChain Pydantic validation errors in the UI
-                if "Error invoking tool" not in message.content:
-                    retrieved_sop = message.content
+        for msg in reversed(result["messages"]):
+            if isinstance(msg, ToolMessage) and msg.name == "retrieve_troubleshooting_sop":
+                retrieved_sop = msg.content
+                break
                 
         return final_answer, retrieved_sop
 
     except Exception as e:
+        logging.error(f"Execution Error: {str(e)}")
         return f"System Error: {str(e)}", None

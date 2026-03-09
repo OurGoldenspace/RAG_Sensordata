@@ -12,3 +12,6 @@ data/
 
 # OS files
 .DS_Store
+
+plots/*.png
+models/*.pkl
