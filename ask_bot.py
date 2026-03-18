@@ -67,7 +67,7 @@ def get_machine_sensor_data(udi: int) -> str:
 
 @tool
 def check_machine_failure_status(udi: int) -> str:
-    """Predicts if a machine is failing using the Random Forest ML model."""
+    """Predicts if a machine is failing and provides a confidence score."""
     if ml_model is None or scaler is None:
         return "ML Model not initialized."
         
@@ -76,14 +76,26 @@ def check_machine_failure_status(udi: int) -> str:
     
     features = row[['Air temperature [K]', 'Process temperature [K]', 'Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']]
     features_scaled = scaler.transform(features)
+    # Inside check_machine_failure_status, right after fetching the row:
+    if row.isnull().values.any():
+        logging.warning(f"Data Cleansing: Null values detected for UDI {udi}. Filling with column mean.")
+        row = row.fillna(df.mean(numeric_only=True)) # This is 'Cleansing/Manipulation'!
+    
+    # NEW: Get probabilities instead of just the class
     prediction = ml_model.predict(features_scaled)[0]
+    probabilities = ml_model.predict_proba(features_scaled)[0]
     
-    if prediction == 0:
-        return f"UDI {udi} status: NORMAL. No anomalies detected."
+    # Probability of the predicted class
+    confidence = probabilities[1] if prediction == 1 else probabilities[0]
     
+    status_text = "FAILED" if prediction == 1 else "HEALTHY"
+    alert = "🚨" if prediction == 1 else "✅"
+    
+    # Optional: Highlight failure mode
     failures = [col for col in ['TWF', 'HDF', 'PWF', 'OSF', 'RNF'] if row[col].values[0] == 1]
-    mode = ', '.join(failures) if failures else 'Unknown Anomaly'
-    return f"CRITICAL: Machine UDI {udi} has FAILED. Mode: {mode}"
+    mode = f" (Mode: {', '.join(failures)})" if failures else ""
+
+    return f"{alert} ML Model Prediction: {status_text} | Confidence: {confidence:.2%}{mode}"
 
 @tool
 def retrieve_troubleshooting_sop(query: str) -> str:

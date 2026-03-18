@@ -1,40 +1,69 @@
-Edge-AI Predictive Maintenance System
-An autonomous, air-gapped diagnostic agent for industrial IoT telemetry. This system combines Machine Learning (Random Forest), Agentic Workflows (LangGraph), and Local RAG (ChromaDB) to provide real-time machine health assessments and repair protocols.
+⚙️ Industrial IoT Diagnostic Agent
+A Hybrid ML + GenAI approach to Predictive Maintenance.
 
-🚀 Key Features
-Predictive Diagnostics: Custom-trained Random Forest model achieves 98.25% accuracy in predicting machine failures based on sensor data.
+This project is a local-first AI tool that doesn't just tell you when a machine is failing—it tells you how to fix it. It combines traditional Machine Learning for sensor analysis with Generative AI for technical reasoning.
 
-Agentic Orchestration: Built with LangGraph to autonomously sequence telemetry retrieval, ML inference, and manual lookups.
+🛠️ The Stack
+Brain: Llama 3.2:3b (via Ollama)
 
-Local RAG: Ingests unstructured technical manuals into a ChromaDB vector store for instant SOP retrieval.
+Agent Logic: LangGraph & LangChain
 
-Edge-Ready: Designed to run entirely on local hardware (Ollama/Llama 3.1) for zero-latency, private industrial environments.
+ML Model: Random Forest (Scikit-Learn)
 
-🛠️ Tech Stack
-LLM: Llama 3.1 (via Ollama)
+Database: ChromaDB (Vector Store)
 
-Orchestration: LangGraph / LangChain
+Frontend: Streamlit
 
-Machine Learning: Scikit-Learn (Random Forest)
+🚀 How It Works
+Data Processing: Cleans and scales CNC sensor data (Temp, Speed, Torque).
 
-Vector Database: ChromaDB
+ML Prediction: A Random Forest model classifies the machine status and gives a Confidence Score.
 
-UI: Streamlit
+GenAI Agent: If a failure is detected, an AI Agent automatically searches the local knowledge base (RAG).
 
-Dataset: AI4I 2020 Predictive Maintenance (UCI Repository)
+SOP Retrieval: The agent provides the exact repair steps from the technical manuals, with citations.
 
-🔧 Setup Instructions
-Install Requirements:
+📂 Project Structure
+data/ – CNC Telemetry CSV.
+
+documents/ – Your repair manuals (.txt).
+
+models/ – Saved ML models and Scalers.
+
+app.py – The main dashboard.
+
+ask_bot.py – The AI Agent logic and tools.
+
+ingest.py – Builds the AI's "memory" from your documents.
+
+train_model.py – Trains the failure prediction model.
+
+⚡ Quick Start
+1. Get the AI
+Install Ollama and download the model:
+
+Bash
+ollama pull llama3.2:3b
+2. Setup & Run
+Bash
+# Install libraries
 pip install -r requirements.txt
 
-Start Ollama:
-Ensure Ollama is running and Llama 3.1 is pulled: ollama pull llama3.1
+# 1. Train the ML model
+python train_model.py
 
-Train the ML Model:
-python train_anomaly_model.py
-
-Ingest Manuals:
+# 2. Build the Knowledge Base
 python ingest.py
 
-Run the App:
+# 3. Start the dashboard
 streamlit run app.py
+💡 Why This Matters
+Privacy: Everything runs 100% locally. No factory data ever touches the cloud.
+
+Hybrid AI: Uses ML for speed and GenAI for reasoning—the best of both worlds.
+
+Actionable: Instead of a simple "Error Code," you get a full repair guide.
+
+Shreyas Varma | University of New Brunswick
+
+Capstone Project

@@ -43,3 +43,38 @@
 2026-03-09 17:24:14,352 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
 2026-03-09 17:24:56,121 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
 2026-03-09 17:24:58,216 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-17 13:55:58,889 - INFO - Use pytorch device_name: cpu
+2026-03-17 13:55:58,890 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-17 13:56:00,479 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-17 13:57:16,639 - INFO - Use pytorch device_name: cpu
+2026-03-17 13:57:16,639 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-17 13:57:18,036 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-17 23:25:14,517 - INFO - Use pytorch device_name: cpu
+2026-03-17 23:25:14,518 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-17 23:25:16,033 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-17 23:27:49,521 - INFO - Use pytorch device_name: cpu
+2026-03-17 23:27:49,521 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-17 23:27:50,846 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-17 23:28:51,264 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-17 23:28:52,346 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-17 23:36:41,348 - INFO - Use pytorch device_name: cpu
+2026-03-17 23:36:41,348 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-17 23:36:42,657 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-17 23:39:22,586 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-17 23:39:24,166 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-17 23:41:28,544 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-17 23:41:29,863 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-18 00:01:37,670 - INFO - Use pytorch device_name: cpu
+2026-03-18 00:01:37,671 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-18 00:01:39,510 - INFO - Backing off send_request(...) for 0.3s (requests.exceptions.ConnectionError: ('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))
+2026-03-18 00:05:52,120 - INFO - Use pytorch device_name: cpu
+2026-03-18 00:05:52,121 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-18 00:05:53,700 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-18 00:06:41,399 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-18 00:06:42,755 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-18 01:13:28,966 - INFO - Use pytorch device_name: cpu
+2026-03-18 01:13:28,966 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-18 01:13:30,433 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-03-18 10:09:10,213 - INFO - Use pytorch device_name: cpu
+2026-03-18 10:09:10,213 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-03-18 10:09:12,226 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
