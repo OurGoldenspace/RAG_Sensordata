@@ -60,7 +60,7 @@ streamlit run app.py
 
 Privacy: Everything runs 100% locally. 
 
-Hybrid AI: Uses ML for speed and GenAI for reasoning—the best of both worlds.
+Hybrid AI: Uses ML for speed and GenAI for reasoning
 
 Actionable: Instead of a simple "Error Code," you get a full repair guide.
 
