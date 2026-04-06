@@ -57,8 +57,8 @@ python ingest.py
 
 # 3. Start the dashboard
 streamlit run app.py
-💡 Why This Matters
-Privacy: Everything runs 100% locally. No factory data ever touches the cloud.
+
+Privacy: Everything runs 100% locally. 
 
 Hybrid AI: Uses ML for speed and GenAI for reasoning—the best of both worlds.
 
